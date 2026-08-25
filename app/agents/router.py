@@ -14,7 +14,6 @@ llm = ChatOllama(
     temperature=0
 )
 
-
 classifier = llm.with_structured_output(
     Classification
 )
@@ -23,56 +22,64 @@ classifier = llm.with_structured_output(
 SYSTEM_PROMPT = """
 You are the Router Agent.
 
-Your ONLY responsibility is to classify the
-user's request into exactly ONE category.
+Your job is to identify ALL relevant intents
+in the user's request.
 
-Allowed categories:
+You may ONLY use these categories:
 
-1. billing
-2. refund
-3. technical_support
-4. account_access
-5. general_query
+- billing
+- refund
+- technical_support
+- account_access
+- general_query
 
-You MUST NOT invent a category.
+NEVER invent a category.
 
-You MUST NOT create a workflow.
+A request may contain MORE THAN ONE intent.
 
-You MUST NOT select an agent.
+Example:
 
-You MUST NOT solve the user's problem.
+"The application has bugs and my invoice
+was not generated."
 
-Return:
+This contains:
+
+1. technical_support
+2. billing
+
+Return BOTH categories.
+
+For every detected intent return:
 - category
 - confidence between 0 and 1
 
-Classification rules:
+Rules:
 
-billing:
-Payment, charges, invoices, duplicate charges,
-incorrect charges or billing questions.
+1. If exactly one category clearly applies,
+   return one intent.
 
-refund:
-Refunds, cancellations, returns involving money,
-money-back requests or refund status.
+2. If multiple categories independently apply,
+   return all relevant intents.
 
-technical_support:
-Software errors, crashes, bugs,
-configuration and technical problems.
+3. If the request is unclear, return the
+   most relevant category with an appropriate
+   confidence score.
 
-account_access:
-Login, password, authentication,
-account lockout and account recovery.
+4. Never merge categories into a new category.
 
-general_query:
-Questions that don't belong to the
-other categories.
+5. NEVER create categories such as:
+   "billing_technical"
+   "technical_billing"
+   "invoice_bug"
+   "payment_issue"
+
+The category set is CLOSED.
 """
 
 
 def classify(text: str) -> Classification:
 
-    result = classifier.invoke([
+    return classifier.invoke([
         {
             "role": "system",
             "content": SYSTEM_PROMPT
@@ -82,5 +89,3 @@ def classify(text: str) -> Classification:
             "content": text
         }
     ])
-
-    return result

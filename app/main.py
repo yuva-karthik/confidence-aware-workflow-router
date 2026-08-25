@@ -2,6 +2,7 @@ from graph import graph
 
 
 def main():
+
     print("=" * 60)
     print("              P18 - A ROUTER")
     print("=" * 60)
@@ -9,6 +10,7 @@ def main():
     print("\nAvailable commands:")
     print("  Type a request to route it")
     print("  'exit' or 'quit' to stop")
+
     print("-" * 60)
 
     while True:
@@ -17,53 +19,57 @@ def main():
             user_input = input("\nUser: ").strip()
 
         except (KeyboardInterrupt, EOFError):
+
             print("\nExiting...")
             break
 
         if not user_input:
-            print("Please enter a request.")
             continue
 
-        if user_input.lower() in {"exit", "quit"}:
+        if user_input.lower() in {
+            "exit",
+            "quit"
+        }:
             print("Goodbye.")
             break
 
-        initial_state = {
-            "input": user_input,
-            "category": None,
-            "confidence": None,
-            "status": None,
-            "result": None
-        }
-
         try:
-            result = graph.invoke(initial_state)
+
+            result = graph.invoke({
+                "input": user_input,
+                "intents": None,
+                "category": None,
+                "confidence": None,
+                "status": None,
+                "workflow": None,
+                "result": None
+            })
 
             print("\n" + "=" * 60)
             print("ROUTER RESULT")
             print("=" * 60)
 
-            print(
-                f"Category   : {result.get('category')}"
-            )
+            print("\nDetected intents:")
 
-            confidence = result.get("confidence")
+            for intent in result["intents"]:
 
-            if confidence is not None:
                 print(
-                    f"Confidence : {confidence:.2%}"
+                    f"  • {intent['category']}: "
+                    f"{intent['confidence']:.2%}"
                 )
 
             print(
-                f"Status     : {result.get('status')}"
+                f"\nStatus: {result['status']}"
             )
 
             if result.get("workflow"):
+
                 print(
-                    f"Workflow   : {result['workflow']}"
+                    f"Workflow: {result['workflow']}"
                 )
 
             if result.get("result"):
+
                 print("\nAgent Response:")
                 print(result["result"])
 

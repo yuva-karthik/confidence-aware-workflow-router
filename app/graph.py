@@ -12,6 +12,7 @@ from agents.account import account_agent
 
 class RouterState(TypedDict):
     input: str
+    intents: Optional[list]
     category: Optional[str]
     confidence: Optional[float]
     status: Optional[str]
@@ -23,29 +24,62 @@ with open("routing.yaml", "r") as f:
     ROUTING_TABLE = yaml.safe_load(f)["routes"]
 
 
+# --------------------------------------------------
+# CLASSIFIER
+# --------------------------------------------------
+
 def classifier_node(state: RouterState):
 
     classification = classify(state["input"])
 
+    intents = [
+        {
+            "category": intent.category.value,
+            "confidence": intent.confidence
+        }
+        for intent in classification.intents
+    ]
+
     return {
-        "category": classification.category.value,
-        "confidence": classification.confidence
+        "intents": intents
     }
 
 
+# --------------------------------------------------
+# CONFIDENCE / MULTI-INTENT GATE
+# --------------------------------------------------
+
 def confidence_node(state: RouterState):
 
-    confidence = state["confidence"]
+    intents = state["intents"]
 
-    if confidence is None or confidence < 0.70:
+    if not intents:
+        return {
+            "status": "human_review"
+        }
+
+    # Multiple intents automatically require review
+    if len(intents) > 1:
+        return {
+            "status": "human_review"
+        }
+
+    # Single low-confidence intent
+    if intents[0]["confidence"] < 0.70:
         return {
             "status": "human_review"
         }
 
     return {
-        "status": "approved"
+        "status": "approved",
+        "category": intents[0]["category"],
+        "confidence": intents[0]["confidence"]
     }
 
+
+# --------------------------------------------------
+# ROUTING DECISION
+# --------------------------------------------------
 
 def route_decision(state: RouterState):
 
@@ -60,6 +94,10 @@ def route_decision(state: RouterState):
     return category
 
 
+# --------------------------------------------------
+# BILLING
+# --------------------------------------------------
+
 def billing_node(state: RouterState):
 
     return {
@@ -68,6 +106,10 @@ def billing_node(state: RouterState):
         "status": "completed"
     }
 
+
+# --------------------------------------------------
+# REFUND
+# --------------------------------------------------
 
 def refund_node(state: RouterState):
 
@@ -78,6 +120,10 @@ def refund_node(state: RouterState):
     }
 
 
+# --------------------------------------------------
+# TECHNICAL
+# --------------------------------------------------
+
 def technical_node(state: RouterState):
 
     return {
@@ -86,6 +132,10 @@ def technical_node(state: RouterState):
         "status": "completed"
     }
 
+
+# --------------------------------------------------
+# ACCOUNT
+# --------------------------------------------------
 
 def account_node(state: RouterState):
 
@@ -96,6 +146,10 @@ def account_node(state: RouterState):
     }
 
 
+# --------------------------------------------------
+# HUMAN REVIEW
+# --------------------------------------------------
+
 def human_review_node(state: RouterState):
 
     print("\n")
@@ -103,26 +157,48 @@ def human_review_node(state: RouterState):
     print("              HUMAN REVIEW")
     print("=" * 60)
 
-    print(f"Input      : {state['input']}")
-    print(f"Prediction : {state['category']}")
-    print(f"Confidence : {state['confidence']:.2%}")
+    print(f"Input: {state['input']}")
 
-    print("\nSelect the correct category:")
+    print("\nDetected intents:")
+
+    intents = state["intents"]
+
+    for i, intent in enumerate(intents, start=1):
+
+        print(
+            f"  {i}. "
+            f"{intent['category']} "
+            f"({intent['confidence']:.2%})"
+        )
+
+    print("\nAvailable categories:")
 
     categories = list(ROUTING_TABLE.keys())
 
     for i, category in enumerate(categories, start=1):
-        print(f"  {i}. {category}")
+
+        print(
+            f"  {i}. {category}"
+        )
+
+    print(
+        "\nSelect the category to route to:"
+    )
 
     while True:
 
-        choice = input("\nYour choice: ").strip()
+        choice = input(
+            "\nYour choice: "
+        ).strip()
 
         try:
+
             index = int(choice) - 1
 
             if 0 <= index < len(categories):
+
                 corrected_category = categories[index]
+
                 break
 
         except ValueError:
@@ -132,22 +208,19 @@ def human_review_node(state: RouterState):
 
     return {
         "category": corrected_category,
+        "confidence": 1.0,
         "status": "human_corrected"
     }
 
 
-def corrected_route(state: RouterState):
-
-    category = state["category"]
-
-    return category
-
+# --------------------------------------------------
+# BUILD GRAPH
+# --------------------------------------------------
 
 def build_graph():
 
     builder = StateGraph(RouterState)
 
-    # Nodes
     builder.add_node(
         "classifier",
         classifier_node
@@ -183,16 +256,15 @@ def build_graph():
         human_review_node
     )
 
-    # Entry
-    builder.set_entry_point("classifier")
+    builder.set_entry_point(
+        "classifier"
+    )
 
-    # Classifier → confidence
     builder.add_edge(
         "classifier",
         "confidence"
     )
 
-    # Confidence → route
     builder.add_conditional_edges(
         "confidence",
         route_decision,
@@ -205,16 +277,30 @@ def build_graph():
         }
     )
 
-    # Normal workflows
-    builder.add_edge("billing", END)
-    builder.add_edge("refund", END)
-    builder.add_edge("technical_support", END)
-    builder.add_edge("account_access", END)
+    builder.add_edge(
+        "billing",
+        END
+    )
 
-    # Human review → corrected route
+    builder.add_edge(
+        "refund",
+        END
+    )
+
+    builder.add_edge(
+        "technical_support",
+        END
+    )
+
+    builder.add_edge(
+        "account_access",
+        END
+    )
+
+    # Human review needs to route again
     builder.add_conditional_edges(
         "human_review",
-        corrected_route,
+        lambda state: state["category"],
         {
             "billing": "billing",
             "refund": "refund",

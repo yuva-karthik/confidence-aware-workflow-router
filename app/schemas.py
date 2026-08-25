@@ -11,11 +11,13 @@ class Category(str, Enum):
     GENERAL = "general_query"
 
 
-class Classification(BaseModel):
-
+class Intent(BaseModel):
     category: Category
-
     confidence: float = Field(
         ge=0.0,
         le=1.0
     )
+
+
+class Classification(BaseModel):
+    intents: list[Intent]
