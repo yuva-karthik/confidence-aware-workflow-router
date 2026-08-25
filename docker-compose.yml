@@ -1,0 +1,12 @@
+services:
+  router:
+    build: .
+    container_name: p18-router
+    stdin_open: true
+    tty: true
+    environment:
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+    volumes:
+      - ./app:/app
+      - ./data:/data
+    command: python main.py

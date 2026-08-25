@@ -1,0 +1,7 @@
+langchain
+langchain-ollama
+langgraph
+pydantic
+pyyaml
+pandas
+scikit-learn
