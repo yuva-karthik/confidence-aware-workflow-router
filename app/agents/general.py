@@ -13,25 +13,19 @@ llm = ChatOllama(
 )
 
 
-def account_agent(text: str) -> str:
+def general_agent(text: str) -> str:
 
     response = llm.invoke([
         {
             "role": "system",
             "content": """
-You are the Account Access Agent.
+You are the General Query Agent.
 
-Handle:
-- Login problems
-- Forgotten passwords
-- Locked accounts
-- Account recovery
-- Authentication issues
+Handle general questions that do not clearly
+belong to billing, refunds, technical support,
+account access, or coding.
 
-Give clear, concise and helpful responses.
-
-Do not handle billing, refunds, coding
-or technical product problems.
+Give a concise and helpful response.
 """
         },
         {

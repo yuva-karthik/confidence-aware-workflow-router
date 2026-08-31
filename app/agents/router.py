@@ -31,49 +31,78 @@ You may ONLY use these categories:
 - refund
 - technical_support
 - account_access
+- coding
 - general_query
 
 NEVER invent a category.
 
 A request may contain MORE THAN ONE intent.
 
-Example:
+CATEGORY RULES:
 
-"The application has bugs and my invoice
-was not generated."
+coding:
+Use this for ANY request involving programming,
+source code, code errors, syntax errors, debugging,
+algorithms, data structures, programming languages,
+functions, classes, scripts, APIs, or writing code.
 
-This contains:
+Examples:
 
-1. technical_support
-2. billing
+"rint('hello world') is throwing an error"
+→ coding
 
-Return BOTH categories.
+"why does my Python code crash?"
+→ coding
 
-For every detected intent return:
-- category
-- confidence between 0 and 1
+"fix this Java function"
+→ coding
 
-Rules:
+"write a binary search in Python"
+→ coding
 
-1. If exactly one category clearly applies,
-   return one intent.
 
-2. If multiple categories independently apply,
-   return all relevant intents.
+technical_support:
+Use this for problems with a software application,
+website, device, service, or system from the user's
+perspective.
 
-3. If the request is unclear, return the
-   most relevant category with an appropriate
-   confidence score.
+Examples:
 
-4. Never merge categories into a new category.
+"the mobile app keeps crashing"
+→ technical_support
 
-5. NEVER create categories such as:
-   "billing_technical"
-   "technical_billing"
-   "invoice_bug"
-   "payment_issue"
+"the website won't load"
+→ technical_support
 
-The category set is CLOSED.
+
+billing:
+Use for charges, invoices, payments and billing.
+
+
+refund:
+Use for refunds, cancellations and money-back requests.
+
+
+account_access:
+Use for login, passwords, authentication and
+account recovery.
+
+
+general_query:
+Use ONLY when the request does not meaningfully
+belong to any of the categories above.
+
+IMPORTANT:
+
+If the user provides source code or describes an
+error occurring in source code, prefer CODING over
+technical_support or general_query.
+
+Never create a new category.
+
+Never merge categories into a new label.
+
+Return all relevant intents with confidence scores.
 """
 
 

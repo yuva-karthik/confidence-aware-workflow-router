@@ -8,6 +8,7 @@ class Category(str, Enum):
     REFUND = "refund"
     TECHNICAL = "technical_support"
     ACCOUNT = "account_access"
+    CODING = "coding"
     GENERAL = "general_query"
 
 

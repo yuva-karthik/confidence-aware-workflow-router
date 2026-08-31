@@ -8,6 +8,8 @@ from agents.billing import billing_agent
 from agents.refund import refund_agent
 from agents.technical import technical_agent
 from agents.account import account_agent
+from agents.coding import coding_agent
+from agents.general import general_agent
 
 
 class RouterState(TypedDict):
@@ -145,7 +147,26 @@ def account_node(state: RouterState):
         "status": "completed"
     }
 
+# --------------------------------------------------
+# CODING
+# --------------------------------------------------
+def coding_node(state: RouterState):
+    return {
+        "workflow": ROUTING_TABLE["coding"]["agent"],
+        "result": coding_agent(state["input"]),
+        "status": "completed"
+    }
 
+# --------------------------------------------------
+# GENERAL
+# --------------------------------------------------
+def general_node(state: RouterState):
+
+    return {
+        "workflow": ROUTING_TABLE["general_query"]["agent"],
+        "result": general_agent(state["input"]),
+        "status": "completed"
+    }
 # --------------------------------------------------
 # HUMAN REVIEW
 # --------------------------------------------------
@@ -252,6 +273,16 @@ def build_graph():
     )
 
     builder.add_node(
+        "coding",
+        coding_node
+    )
+
+    builder.add_node(
+        "general_query",
+        general_node
+    )
+
+    builder.add_node(
         "human_review",
         human_review_node
     )
@@ -273,6 +304,8 @@ def build_graph():
             "refund": "refund",
             "technical_support": "technical_support",
             "account_access": "account_access",
+            "coding": "coding",
+            "general_query": "general_query",
             "human_review": "human_review"
         }
     )
@@ -297,6 +330,16 @@ def build_graph():
         END
     )
 
+    builder.add_edge(
+        "coding",
+        END
+    )
+
+    builder.add_edge(
+        "general_query",
+        END
+    )
+
     # Human review needs to route again
     builder.add_conditional_edges(
         "human_review",
@@ -305,7 +348,9 @@ def build_graph():
             "billing": "billing",
             "refund": "refund",
             "technical_support": "technical_support",
-            "account_access": "account_access"
+            "account_access": "account_access",
+            "coding": "coding",
+            "general_query": "general_query"
         }
     )
 

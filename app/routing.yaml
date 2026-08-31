@@ -10,3 +10,9 @@ routes:
 
   account_access:
     agent: account
+
+  coding:
+    agent: coding
+
+  general_query:
+    agent: general
